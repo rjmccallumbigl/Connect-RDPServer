@@ -9,7 +9,7 @@
 		successful.
 
 	.PARAMETER address
-        IP address/FQDN.
+	        IP address/FQDN.
 
 	.EXAMPLE
 		Connect-RDPServer -address "1.23.34.234"
