@@ -13,6 +13,7 @@
 
 	.EXAMPLE
 		Connect-RDPServer -address "1.23.34.234"
+		RDP 1.23.34.234
 
 	.LINK
 		https://github.com/rjmccallumbigl/Connect-RDPServer
@@ -21,11 +22,13 @@
 		Ryan McCallum (rymccall)
 
 	.VERSION
+		v0.2: Add alias
 		v0.1: Initial commit
 
 ##########################################################################################################>
 
 function Connect-RDPServer {
+	[alias("RDP")]
 	param (
 		[Parameter(Mandatory = $true, HelpMessage = "Address of the server.")]		
 		[string]
