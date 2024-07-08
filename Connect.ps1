@@ -44,14 +44,16 @@ function Connect-RDPServer {
 	Write-Output "Connecting to: $($address)..."
 	$testingConnection = $true
 	while ($testingConnection) {
-		$pingResults = Test-NetConnection -ComputerName $address -Port 3389 -InformationLevel Quiet
+		# $ProgressPreference = "SilentlyContinue"
+		$pingResults = Test-NetConnection -ComputerName $address -Port 3389 -InformationLevel Quiet -verbose # -ProgressAction SilentlyContinue -Verbose
 		if ($pingResults) {
 			$testingConnection = $false
-			mstsc "/v:$($address)"
+			Start-Process -FilePath "C:\Windows\System32\mstsc.exe" -ArgumentList "/v:$($address)" -WindowStyle Normal
+			return
 		}
 	}
 }
-
+# Update Connect-SSHServer so the default $userName is "rymccall"
 function Connect-SSHServer {
 	[alias("SSH")]
 	param (
@@ -60,7 +62,7 @@ function Connect-SSHServer {
 		$address,
 		[Parameter(Mandatory = $false, HelpMessage = "username")]
 		[string]
-		$userName
+		$userName = "rymccall"
 	)
 
 
@@ -68,7 +70,8 @@ function Connect-SSHServer {
 	Write-Output "Connecting to: $($address)..."
 	$testingConnection = $true
 	while ($testingConnection) {
-		$pingResults = Test-NetConnection -ComputerName $address -Port 22 -InformationLevel Quiet
+		# $ProgressPreference = "SilentlyContinue"
+		$pingResults = Test-NetConnection -ComputerName $address -Port 22 -InformationLevel Quiet -Verbose # -ProgressAction SilentlyContinue
 		if ($pingResults) {
 			$testingConnection = $false
 
@@ -78,21 +81,23 @@ function Connect-SSHServer {
 			}
 			# Attempt with Linux profiles in Windows Terminal first if installed
 			try {
-				$wtSettingsLocation = (Get-Item "$Env:LocalAppData\Packages\Microsoft.WindowsTerminal_*\LocalState\settings.json" -ErrorAction Stop)
-				$wtSettingsRaw = Get-Content $wtSettingsLocation -Raw
-				$wtSettings = $wtSettingsRaw | ConvertFrom-Json
-				$wtProfiles = $wtSettings.profiles.list
+				# $wtSettingsLocation = (Get-Item "$Env:LocalAppData\Packages\Microsoft.WindowsTerminal_*\LocalState\settings.json" -ErrorAction Stop)
+				# $wtSettingsRaw = Get-Content $wtSettingsLocation -Raw
+				# $wtSettings = $wtSettingsRaw | ConvertFrom-Json
+				# $wtProfiles = $wtSettings.profiles.list
 
 				# Some WSL options that may be installed in your WSL (modify as necessary)
-				$wtLinuxOptions = @("ubuntu", "suse", "debian")
-				ForEach ( $wtProfile in $wtProfiles) {
-					ForEach ( $wtLinuxOption in $wtLinuxOptions) {
-						if ($wtProfile.name -like "*$($wtLinuxOption)*" ) {
-							wt -p $wtProfile.name ssh "$($userName)@$($address)"
+				# $wtLinuxOptions = @("ubuntu", "suse", "debian")
+				# ForEach ( $wtProfile in $wtProfiles) {
+					# ForEach ( $wtLinuxOption in $wtLinuxOptions) {
+						# if ($wtProfile.name -like "*$($wtLinuxOption)*" ) {
+							# wt -p $wtProfile.name ssh "$($userName)@$($address)"
+							# wsl ssh "$($address)"
+							wt -p 'ubuntu-20.04' ssh "$($userName)@$($address)" -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no
 							return
-						}
-					}
-				}
+						# }
+					# }
+				# }
 			}
 			catch {
 				try {
@@ -103,6 +108,7 @@ function Connect-SSHServer {
 				catch {
 					# If Windows Terminal and Putty are not installed, attempt to SSH via PowerShell instead. Can be glitchy
 					cmd /c "ssh $($userName)@$($address)"
+					return
 				}
 			}
 		}
